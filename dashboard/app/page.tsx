@@ -1,30 +1,28 @@
-import AppAreaChart from "@/components/app-area-chart";
-import AppBarChart from "@/components/app-bar-chart";
-import AppPieChart from "@/components/app-pie-chart";
-import CardList from "@/components/card-list";
-import TodoList from "@/components/todo-list";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { auth } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
 
-export default function HomePage() {
+export default async function Page() {
+  // Use `auth()` to access `isAuthenticated` - if false, the user is not signed in
+  const { isAuthenticated } = await auth();
+
+  // Use `user` to render user details or create UI elements
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-4 gap-4">
-      <div className="bg-primary-foreground p-4 rounded-lg lg:col-span-2 xl:col-span-1 2xl:col-span-2">
-        <AppBarChart />
-      </div>
-      <div className="bg-primary-foreground p-4 rounded-lg">
-        <CardList title="Latest Transactions" />
-      </div>
-      <div className="bg-primary-foreground p-4 rounded-lg">
-        <AppPieChart />
-      </div>
-      <div className="bg-primary-foreground p-4 rounded-lg">
-        <TodoList />
-      </div>
-      <div className="bg-primary-foreground p-4 rounded-lg lg:col-span-2 xl:col-span-1 2xl:col-span-2">
-        <AppAreaChart />
-      </div>
-      <div className="bg-primary-foreground p-4 rounded-lg">
-        <CardList title="Popular Products" />
-      </div>
+    <div className="flex items-center justify-center w-full h-screen flex-col gap-4">
+      <p
+        className={cn(
+          "text-2xl font-bold",
+          isAuthenticated ? "text-green-500" : "text-red-500"
+        )}
+      >
+        {isAuthenticated ? "You are signed in!" : "You are not signed in."}
+      </p>
+      <Button asChild>
+        <a href={isAuthenticated ? "/dashboard" : "/sign-in"} className="ml-4">
+          {isAuthenticated ? "Go to Dashboard" : "Sign In"}
+        </a>
+      </Button>
     </div>
   );
 }

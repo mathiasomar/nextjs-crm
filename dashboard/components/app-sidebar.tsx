@@ -43,7 +43,7 @@ import AddProduct from "./add-product";
 const items = [
   {
     title: "Home",
-    url: "/",
+    url: "/dashboard",
     icon: Home,
   },
   {
@@ -75,7 +75,7 @@ const AppSidebar = () => {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
-              <Link href="/">
+              <Link href="/dashboard">
                 <Image src={"/logo.svg"} alt="logo" width={20} height={20} />
                 <span>Admin Dash</span>
               </Link>
