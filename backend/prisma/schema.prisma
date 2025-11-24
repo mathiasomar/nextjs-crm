@@ -110,7 +110,8 @@ model OrganizationUser {
 }
 
 model User {
-  id        String  @id
+  id        String  @id @default(cuid())
+  clerkId   String  @unique // clerk user id
   email     String
   firstName String?
   lastName  String?
