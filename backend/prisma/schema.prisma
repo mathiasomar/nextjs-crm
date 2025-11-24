@@ -1,0 +1,317 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Contact {
+  id        String        @id @default(cuid())
+  firstName String
+  lastName  String
+  email     String        @unique
+  phone     String?
+  company   String?
+  jobTitle  String?
+  status    ContactStatus @default(LEAD)
+  source    String?
+  tags      String[]
+
+  // relationships
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+
+  // Address
+  street     String?
+  city       String?
+  state      String?
+  country    String?
+  postalCode String?
+
+  // Social Media
+  website  String?
+  linkedIn String?
+  twitter  String?
+
+  // metadata
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String // clerk user id
+
+  // Relations
+  deals      Deal[]
+  activities Activity[]
+  Notes      Note[]
+  documents  Document[]
+  emails     Email[]
+
+  @@index([email])
+  @@index([organizationId, status])
+}
+
+enum ContactStatus {
+  LEAD
+  PROSPECT
+  CUSTOMER
+  INACTIVE
+}
+
+model Organization {
+  id   String   @id @default(cuid())
+  name String
+  slug String   @unique
+  plan PlanType @default(SRARTER)
+
+  // setting
+  settings Json? // Create organization settings
+
+  // metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // relations
+  contacts       Contact[]
+  deals          Deal[]
+  activities     Activity[]
+  users          OrganizationUser[]
+  notes          Note[]
+  documents      Document[]
+  emails         Email[]
+  emailTemplates EmailTemplate[]
+
+  @@map("organizations")
+}
+
+model OrganizationUser {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String // clerk user id
+  role           UserRole @default(VIEWER)
+  user           User     @relation(fields: [userId], references: [id])
+
+  // metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // relations
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([organizationId, userId])
+  @@map("organization_users")
+}
+
+model User {
+  id        String  @id
+  email     String
+  firstName String?
+  lastName  String?
+  avatarUrl String?
+
+  // metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // relations
+  organizationUsers OrganizationUser[]
+  deals             Deal[]
+  activities        Activity[]
+
+  @@map("users")
+}
+
+enum UserRole {
+  ADMIN
+  MANAGER
+  AGENT
+  VIEWER
+}
+
+enum PlanType {
+  SRARTER
+  PROFESSIONAL
+  ENTERPRISE
+}
+
+model Deal {
+  id            String     @id @default(cuid())
+  title         String
+  description   String?
+  value         Decimal? //DECIMAL value
+  currency      String?    @default("USD") // Currency code like USD, EUR
+  probability   Float      @default(0.0) // Probability percentage 0.0 - 100.0
+  stage         DealStage
+  expectedClose DateTime?
+  closedAt      DateTime?
+  status        DealStatus @default(OPEN)
+
+  // metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String // clerk user id
+
+  // relationships
+  contactId      String?
+  contact        Contact?     @relation(fields: [contactId], references: [id])
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  userId         String? // clerk user id
+  user           User?        @relation(fields: [userId], references: [id])
+
+  // relations
+  activities Activity[]
+  notes      Note[]
+  documents  Document[]
+
+  @@index([organizationId, stage])
+  @@index([expectedClose])
+}
+
+enum DealStage {
+  PROSPECTING
+  QUALIFICATION
+  PROPOSAL
+  NEGOTIATION
+  CLOSED_WON
+  CLOSED_LOST
+}
+
+enum DealStatus {
+  OPEN
+  WON
+  LOST
+}
+
+model Activity {
+  id          String       @id @default(cuid())
+  type        ActivityType
+  Title       String
+  description String?
+  dueDate     DateTime?
+  completedAt DateTime?
+
+  // metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String // clerk user id
+
+  // relationships
+  contactId      String?
+  contact        Contact?     @relation(fields: [contactId], references: [id])
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  dealId         String?
+  deal           Deal?        @relation(fields: [dealId], references: [id])
+
+  assignTo     String? // clerk user id
+  assignedUser User?   @relation(fields: [assignTo], references: [id])
+
+  @@index([organizationId, dueDate])
+  @@index([assignTo, completedAt])
+}
+
+enum ActivityType {
+  CALL
+  MEETING
+  EMAIL
+  TASK
+  NOTE
+}
+
+model Note {
+  id        String  @id @default(cuid())
+  title     String
+  content   String
+  isPrivate Boolean @default(false)
+
+  // relationships
+  contactId      String?
+  contact        Contact?     @relation(fields: [contactId], references: [id])
+  dealId         String
+  deal           Deal         @relation(fields: [dealId], references: [id])
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  // metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String // clerk user id
+
+  @@index([organizationId, createdAt])
+}
+
+model Document {
+  id   String @id @default(cuid())
+  name String
+  url  String // File storage URL
+  type String // MIME type
+  size Int // File size in bytes
+
+  // Relationships
+  contactId      String?
+  contact        Contact?     @relation(fields: [contactId], references: [id])
+  dealId         String?
+  deal           Deal?        @relation(fields: [dealId], references: [id])
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  // Metadata
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  uploadedBy String // clerk user id
+
+  @@index([organizationId, createdAt])
+}
+
+model Email {
+  id      String   @id @default(cuid())
+  to      String[] // Recipients
+  from    String // Sender
+  subject String
+  body    String
+  cc      String[] // Carbon copy recipients
+  bcc     String[] // Blind carbon copy recipients
+
+  // Tracking
+  openedAt    DateTime?
+  sentAt      DateTime  @default(now())
+  clickedUrls String[] // URLs clicked in the email
+
+  // Relationships
+  contactId      String?
+  contact        Contact?     @relation(fields: [contactId], references: [id])
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  // metadata
+  createdAt DateTime @default(now())
+  createdBy String // clerk user id
+
+  @@index([organizationId, sentAt])
+}
+
+model EmailTemplate {
+  id       String  @id @default(cuid())
+  name     String
+  subject  String
+  body     String
+  isActive Boolean @default(true)
+
+  // metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId, name])
+}
