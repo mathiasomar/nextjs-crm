@@ -94,7 +94,7 @@ model Organization {
 model OrganizationUser {
   id             String   @id @default(cuid())
   organizationId String
-  userId         String // clerk user id
+  userId         String
   role           UserRole @default(VIEWER)
   user           User     @relation(fields: [userId], references: [id])
 
