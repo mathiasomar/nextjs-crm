@@ -13,306 +13,295 @@ datasource db {
   provider = "postgresql"
 }
 
-model Contact {
-  id        String        @id @default(cuid())
-  firstName String
-  lastName  String
-  email     String        @unique
-  phone     String?
-  company   String?
-  jobTitle  String?
-  status    ContactStatus @default(LEAD)
-  source    String?
-  tags      String[]
-
-  // relationships
-  organizationId String?
-  organization   Organization? @relation(fields: [organizationId], references: [id])
-
-  // Address
-  street     String?
-  city       String?
-  state      String?
-  country    String?
-  postalCode String?
-
-  // Social Media
-  website  String?
-  linkedIn String?
-  twitter  String?
-
-  // metadata
-  notes     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  createdBy String // clerk user id
-
-  // Relations
-  deals      Deal[]
-  activities Activity[]
-  Notes      Note[]
-  documents  Document[]
-  emails     Email[]
-
-  @@index([email])
-  @@index([organizationId, status])
-}
-
-enum ContactStatus {
-  LEAD
-  PROSPECT
-  CUSTOMER
-  INACTIVE
-}
-
-model Organization {
-  id   String   @id @default(cuid())
-  name String
-  slug String   @unique
-  plan PlanType @default(SRARTER)
-
-  // setting
-  settings Json? // Create organization settings
-
-  // metadata
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // relations
-  contacts       Contact[]
-  deals          Deal[]
-  activities     Activity[]
-  users          OrganizationUser[]
-  notes          Note[]
-  documents      Document[]
-  emails         Email[]
-  emailTemplates EmailTemplate[]
-
-  @@map("organizations")
-}
-
-model OrganizationUser {
-  id             String   @id @default(cuid())
-  organizationId String
-  userId         String
-  role           UserRole @default(VIEWER)
-  user           User     @relation(fields: [userId], references: [id])
-
-  // metadata
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // relations
-  organization Organization @relation(fields: [organizationId], references: [id])
-
-  @@unique([organizationId, userId])
-  @@map("organization_users")
-}
-
-model User {
-  id        String  @id @default(cuid())
-  clerkId   String  @unique // clerk user id
-  email     String
-  firstName String?
-  lastName  String?
-  avatarUrl String?
-
-  // metadata
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // relations
-  organizationUsers OrganizationUser[]
-  deals             Deal[]
-  activities        Activity[]
-
-  @@map("users")
-}
-
-enum UserRole {
+enum Role {
+  OWNER
   ADMIN
-  MANAGER
-  AGENT
-  VIEWER
+  USER
+  GUEST
 }
 
-enum PlanType {
-  SRARTER
-  PROFESSIONAL
-  ENTERPRISE
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  UNQUALIFIED
+  CONVERTED
 }
 
-model Deal {
-  id            String     @id @default(cuid())
-  title         String
-  description   String?
-  value         Decimal? //DECIMAL value
-  currency      String?    @default("USD") // Currency code like USD, EUR
-  probability   Float      @default(0.0) // Probability percentage 0.0 - 100.0
-  stage         DealStage
-  expectedClose DateTime?
-  closedAt      DateTime?
-  status        DealStatus @default(OPEN)
-
-  // metadata
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  createdBy String // clerk user id
-
-  // relationships
-  contactId      String?
-  contact        Contact?     @relation(fields: [contactId], references: [id])
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id])
-  userId         String? // clerk user id
-  user           User?        @relation(fields: [userId], references: [id])
-
-  // relations
-  activities Activity[]
-  notes      Note[]
-  documents  Document[]
-
-  @@index([organizationId, stage])
-  @@index([expectedClose])
-}
-
-enum DealStage {
+enum OpportunityStage {
   PROSPECTING
-  QUALIFICATION
+  QUALIFIED
   PROPOSAL
   NEGOTIATION
   CLOSED_WON
   CLOSED_LOST
 }
 
-enum DealStatus {
-  OPEN
-  WON
-  LOST
+model User {
+  id             Int           @id @default(autoincrement())
+  clerkUserId    String        @unique // Clerk user id, canonical auth id
+  email          String?       @unique
+  firstName      String?
+  lastName       String?
+  phone          String?
+  avatarUrl      String?
+  role           Role          @default(USER)
+  timezone       String? // e.g. "Africa/Nairobi"
+  locale         String? // e.g. "en-US"
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  organizationId Int? // optional default org
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+
+  teams         UserTeam[]
+  activities    Activity[] // tasks/notes/calls created by user
+  assignedTasks Task[]        @relation("taskAssignee")
+  auditLogs     AuditLog[]
+  contacts      Contact[] // contacts owned by user
+  leads         Lead[] // leads owned by user
+  notes         Note[]        @relation("NoteAuthor")
+  opportunities Opportunity[] // Add opposite relation field
+  quotes        Quote[] // Add opposite relation field
+}
+
+model Organization {
+  id        Int      @id @default(autoincrement())
+  name      String
+  slug      String   @unique
+  website   String?
+  phone     String?
+  address   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users         User[] // users who belong to organization (via organizationId)
+  teams         Team[]
+  contacts      Contact[]
+  leads         Lead[]
+  opportunities Opportunity[]
+  products      Product[]
+  invoices      Invoice[]
+  pipelines     Pipeline[] // relation to Pipeline
+}
+
+model Team {
+  id             Int          @id @default(autoincrement())
+  name           String
+  organizationId Int
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  members        UserTeam[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+model UserTeam {
+  id     Int  @id @default(autoincrement())
+  userId Int
+  teamId Int
+  role   Role @default(USER)
+  user   User @relation(fields: [userId], references: [id])
+  team   Team @relation(fields: [teamId], references: [id])
+
+  @@unique([userId, teamId])
+}
+
+model Contact {
+  id             Int           @id @default(autoincrement())
+  firstName      String
+  lastName       String
+  email          String?       @unique
+  phone          String?
+  jobTitle       String?
+  organizationId Int? // employer company
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  ownerId        Int? // user responsible
+  owner          User?         @relation(fields: [ownerId], references: [id])
+  tags           ContactTag[]
+  customFields   Json?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  notes          Note[]
+  activities     Activity[] // activities linked to contact
+  leads          Lead[] // leads associated with contact
+  opportunities  Opportunity[] // Add opposite relation field
+}
+
+model ContactTag {
+  id        Int     @id @default(autoincrement())
+  contactId Int
+  tag       String
+  contact   Contact @relation(fields: [contactId], references: [id])
+
+  @@index([tag])
+}
+
+model Lead {
+  id             Int           @id @default(autoincrement())
+  source         String? // e.g., "web", "import", "campaign"
+  status         LeadStatus    @default(NEW)
+  contactId      Int? // who is the lead (nullable)
+  contact        Contact?      @relation(fields: [contactId], references: [id])
+  organizationId Int? // company lead pertains to
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  ownerId        Int? // assigned user
+  owner          User?         @relation(fields: [ownerId], references: [id])
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  notes          Note[]
+  activities     Activity[]
+  opportunity    Opportunity?  @relation // Define relation without `fields` and `references`
+}
+
+model Opportunity {
+  id             Int              @id @default(autoincrement())
+  title          String
+  value          Float?
+  currency       String? // e.g., "USD"
+  stage          OpportunityStage @default(PROSPECTING)
+  probability    Int? // 0-100
+  closeDate      DateTime?
+  leadId         Int?             @unique // Add `@unique` for one-to-one relationship
+  lead           Lead?            @relation(fields: [leadId], references: [id])
+  contactId      Int? // primary contact
+  contact        Contact?         @relation(fields: [contactId], references: [id])
+  organizationId Int?
+  organization   Organization?    @relation(fields: [organizationId], references: [id])
+  ownerId        Int?
+  owner          User?            @relation(fields: [ownerId], references: [id])
+  pipelineId     Int? // optional pipeline reference
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  activities     Activity[]
+  notes          Note[]
+  quotes         Quote[]
+}
+
+model Pipeline {
+  id     Int          @id @default(autoincrement())
+  name   String
+  stages String[] // e.g., ["Prospecting","Qualified","Proposal","Closed Won"]
+  orgId  Int
+  org    Organization @relation(fields: [orgId], references: [id])
 }
 
 model Activity {
-  id          String       @id @default(cuid())
-  type        ActivityType
-  Title       String
-  description String?
-  dueDate     DateTime?
-  completedAt DateTime?
-
-  // metadata
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  createdBy String // clerk user id
-
-  // relationships
-  contactId      String?
-  contact        Contact?     @relation(fields: [contactId], references: [id])
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id])
-  dealId         String?
-  deal           Deal?        @relation(fields: [dealId], references: [id])
-
-  assignTo     String? // clerk user id
-  assignedUser User?   @relation(fields: [assignTo], references: [id])
-
-  @@index([organizationId, dueDate])
-  @@index([assignTo, completedAt])
+  id            Int          @id @default(autoincrement())
+  type          String // e.g., "call", "email", "task", "meeting"
+  title         String?
+  description   String?
+  dueDate       DateTime?
+  completed     Boolean      @default(false)
+  userId        Int? // creator
+  user          User?        @relation(fields: [userId], references: [id])
+  contactId     Int?
+  contact       Contact?     @relation(fields: [contactId], references: [id])
+  opportunityId Int?
+  opportunity   Opportunity? @relation(fields: [opportunityId], references: [id])
+  leadId        Int?
+  lead          Lead?        @relation(fields: [leadId], references: [id])
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  attachments   Attachment[]
 }
 
-enum ActivityType {
-  CALL
-  MEETING
-  EMAIL
-  TASK
-  NOTE
+model Task {
+  id          Int       @id @default(autoincrement())
+  title       String
+  description String?
+  dueDate     DateTime?
+  completed   Boolean   @default(false)
+  assigneeId  Int? // assigned to user
+  assignee    User?     @relation("taskAssignee", fields: [assigneeId], references: [id])
+  relatedType String? // e.g., "contact","opportunity" to simplify polymorphic links
+  relatedId   Int?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
 model Note {
-  id        String  @id @default(cuid())
-  title     String
-  content   String
-  isPrivate Boolean @default(false)
-
-  // relationships
-  contactId      String?
-  contact        Contact?     @relation(fields: [contactId], references: [id])
-  dealId         String
-  deal           Deal         @relation(fields: [dealId], references: [id])
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id])
-
-  // metadata
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  createdBy String // clerk user id
-
-  @@index([organizationId, createdAt])
+  id            Int          @id @default(autoincrement())
+  content       String
+  authorId      Int?
+  author        User?        @relation("NoteAuthor", fields: [authorId], references: [id])
+  contactId     Int?
+  contact       Contact?     @relation(fields: [contactId], references: [id])
+  opportunityId Int?
+  opportunity   Opportunity? @relation(fields: [opportunityId], references: [id])
+  leadId        Int?
+  lead          Lead?        @relation(fields: [leadId], references: [id])
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
 }
 
-model Document {
-  id   String @id @default(cuid())
-  name String
-  url  String // File storage URL
-  type String // MIME type
-  size Int // File size in bytes
-
-  // Relationships
-  contactId      String?
-  contact        Contact?     @relation(fields: [contactId], references: [id])
-  dealId         String?
-  deal           Deal?        @relation(fields: [dealId], references: [id])
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id])
-
-  // Metadata
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  uploadedBy String // clerk user id
-
-  @@index([organizationId, createdAt])
+model Product {
+  id             Int           @id @default(autoincrement())
+  sku            String?       @unique
+  name           String
+  description    String?
+  price          Float
+  currency       String?
+  organizationId Int?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  quotes         QuoteItem[]
 }
 
-model Email {
-  id      String   @id @default(cuid())
-  to      String[] // Recipients
-  from    String // Sender
-  subject String
-  body    String
-  cc      String[] // Carbon copy recipients
-  bcc     String[] // Blind carbon copy recipients
-
-  // Tracking
-  openedAt    DateTime?
-  sentAt      DateTime  @default(now())
-  clickedUrls String[] // URLs clicked in the email
-
-  // Relationships
-  contactId      String?
-  contact        Contact?     @relation(fields: [contactId], references: [id])
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id])
-
-  // metadata
-  createdAt DateTime @default(now())
-  createdBy String // clerk user id
-
-  @@index([organizationId, sentAt])
+model Quote {
+  id            Int          @id @default(autoincrement())
+  opportunityId Int?
+  opportunity   Opportunity? @relation(fields: [opportunityId], references: [id])
+  issuerId      Int? // user who created quote
+  issuer        User?        @relation(fields: [issuerId], references: [id])
+  total         Float?
+  currency      String?
+  status        String? // draft, sent, accepted, declined
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  items         QuoteItem[]
 }
 
-model EmailTemplate {
-  id       String  @id @default(cuid())
-  name     String
-  subject  String
-  body     String
-  isActive Boolean @default(true)
+model QuoteItem {
+  id        Int      @id @default(autoincrement())
+  quoteId   Int
+  productId Int?
+  quantity  Int      @default(1)
+  unitPrice Float
+  quote     Quote    @relation(fields: [quoteId], references: [id])
+  product   Product? @relation(fields: [productId], references: [id])
+}
 
-  // metadata
+model Invoice {
+  id             Int           @id @default(autoincrement())
+  invoiceNumber  String        @unique
+  organizationId Int?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  amount         Float
+  currency       String?
+  dueDate        DateTime?
+  status         String? // draft, sent, paid, overdue
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+}
+
+model Attachment {
+  id         Int       @id @default(autoincrement())
+  url        String
+  filename   String
+  size       Int?
+  mimeType   String?
+  activityId Int?
+  activity   Activity? @relation(fields: [activityId], references: [id])
+  createdAt  DateTime  @default(now())
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  entity    String // e.g., "Contact"
+  entityId  Int
+  action    String // create, update, delete
+  userId    Int?
+  user      User?    @relation(fields: [userId], references: [id])
+  changes   Json?
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relationships
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id])
-
-  @@index([organizationId, name])
 }
