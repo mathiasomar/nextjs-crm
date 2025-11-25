@@ -1,6 +1,7 @@
 import express, { NextFunction, Request, Response } from "express";
 import cors from "cors";
 import userRoutes from "./routes/user.route";
+import { clerkMiddleware } from "@clerk/express";
 
 const app = express();
 app.use(express.json());
@@ -9,6 +10,7 @@ app.use(
     origin: [process.env.ORIGIN || "http://localhost:3000"],
   })
 );
+app.use(clerkMiddleware());
 
 app.use("/api/users", userRoutes);
 

@@ -66,7 +66,7 @@ export const getUsers = async (req: Request, res: Response) => {
 };
 
 export const getUser = async (req: Request, res: Response) => {
-  const userId = req.params.id;
-  const user = await prisma.user.findFirst({ where: { id: Number(userId) } });
+  const { id } = req.params;
+  const user = await prisma.user.findUnique({ where: { id: Number(id) } });
   res.status(200).json(user);
 };
