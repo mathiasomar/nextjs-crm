@@ -1,6 +1,10 @@
 import express, { NextFunction, Request, Response } from "express";
 import cors from "cors";
 import userRoutes from "./routes/user.route";
+import contactRoute from "./routes/contact.route";
+import leadRoute from "./routes/lead.route";
+import opportunityRoute from "./routes/oppotunity.route";
+import activityRoute from "./routes/activity.route";
 import { clerkMiddleware } from "@clerk/express";
 
 const app = express();
@@ -13,6 +17,10 @@ app.use(
 app.use(clerkMiddleware());
 
 app.use("/api/users", userRoutes);
+app.use("/api/contacts", contactRoute);
+app.use("/api/leads", leadRoute);
+app.use("/api/oppotunities", opportunityRoute);
+app.use("/api/activities", activityRoute);
 
 const PORT = process.env.PORT || 8000;
 
