@@ -64,3 +64,9 @@ export const getUsers = async (req: Request, res: Response) => {
   const users = await prisma.user.findMany();
   res.status(200).json(users);
 };
+
+export const getUser = async (req: Request, res: Response) => {
+  const userId = req.params.id;
+  const user = await prisma.user.findFirst({ where: { id: Number(userId) } });
+  res.status(200).json(user);
+};
