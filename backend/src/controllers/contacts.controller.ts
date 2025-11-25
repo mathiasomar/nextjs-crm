@@ -25,7 +25,21 @@ export const getContacts = async (req: Request, res: Response) => {
 
   return res.status(200).json(contacts);
 };
-export const createContact = async (req: Request, res: Response) => {};
+
+export const createContact = async (req: Request, res: Response) => {
+  const data = req.body;
+  const { tags, ...contactData } = data;
+
+  const contact = await prisma.contact.create({
+    data: {
+      ...contactData,
+      tags: { create: tags?.map((t: string) => ({ tag: t })) },
+    },
+  });
+
+  res.status(201).json(contact);
+};
+
 export const getContact = async (req: Request, res: Response) => {};
 export const updateContact = async (req: Request, res: Response) => {};
 export const deleteContact = async (req: Request, res: Response) => {};
