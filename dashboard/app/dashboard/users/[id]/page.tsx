@@ -39,9 +39,9 @@ const SingleUserPage = () => {
         </BreadcrumbList>
       </Breadcrumb>
       {/* CONTAINER */}
-      <div className="mt-4 flex flex-col xl:flex-row gap-8">
+      <div className="mt-4 flex flex-col lg:flex-row gap-8">
         {/* LEFT */}
-        <div className="w-full xl:w-1/3 space-y-6">
+        <div className="w-full lg:w-1/3 space-y-6">
           {/* USER BADGES */}
           <div className="bg-primary-foreground p-4 rounded-lg">
             <h1 className="text-xl font-semibold">User Budges</h1>
@@ -167,7 +167,7 @@ const SingleUserPage = () => {
           </div>
         </div>
         {/* RIGHT */}
-        <div className="w-full xl:w-2/3 space-y-6">
+        <div className="w-full lg:w-2/3 space-y-6">
           {/* THE CHART CONTAINER */}
           <div className="bg-primary-foreground p-4 rounded-lg">
             <h1 className="text-xl font-semibold">User Activity</h1>
