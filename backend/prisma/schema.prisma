@@ -14,10 +14,10 @@ datasource db {
 }
 
 enum Role {
-  OWNER
   ADMIN
-  USER
-  GUEST
+  MANAGER
+  AGENT
+  SUPPORT
 }
 
 enum LeadStatus {
@@ -38,290 +38,331 @@ enum OpportunityStage {
 }
 
 model User {
-  id             Int           @id @default(autoincrement())
-  clerkUserId    String        @unique // Clerk user id, canonical auth id
-  email          String?       @unique
-  firstName      String?
-  lastName       String?
-  phone          String?
-  avatarUrl      String?
-  role           Role          @default(USER)
-  timezone       String? // e.g. "Africa/Nairobi"
-  locale         String? // e.g. "en-US"
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  organizationId Int? // optional default org
-  organization   Organization? @relation(fields: [organizationId], references: [id])
-
-  teams         UserTeam[]
-  activities    Activity[] // tasks/notes/calls created by user
-  assignedTasks Task[]        @relation("taskAssignee")
-  auditLogs     AuditLog[]
-  contacts      Contact[] // contacts owned by user
-  leads         Lead[] // leads owned by user
-  notes         Note[]        @relation("NoteAuthor")
-  opportunities Opportunity[] // Add opposite relation field
-  quotes        Quote[] // Add opposite relation field
-}
-
-model Organization {
-  id          Int      @id @default(autoincrement())
-  name        String
-  slug        String   @unique
-  description String
-  website     String?
+  id          String   @id @default(uuid())
+  clerkUserId String   @unique // Clerk user id, canonical auth id
+  email       String?  @unique
+  firstName   String?
+  lastName    String?
   phone       String?
-  address     String?
+  avatarUrl   String?
+  role        Role     @default(AGENT)
+  department  String? // 'Sales', 'Support', 'Marketing'
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  users          User[] // users who belong to organization (via organizationId)
-  teams          Team[]
-  contacts       Contact[]
-  leads          Lead[]
-  opportunities  Opportunity[]
-  products       Product[]
-  invoices       Invoice[]
-  pipelines      Pipeline[] // relation to Pipeline
-  organizationId OrganizationUser[]
-}
+  // Reverse relations
+  assignedLeads         Lead[]
+  assignedOpportunities Opportunity[]
+  assignedCases         Case[]
+  assignedActivities    Activity[]
+  createdNotes          Note[]
+  uploadedDocuments     Document[]
 
-enum OrganizationUserRoleType {
-  ADMIN
-  MEMBER
-  OWNER
-}
-
-model OrganizationUser {
-  id             String @id @default(cuid())
-  userId         String @unique // Clerk user ID
-  organizationId Int
-
-  role      OrganizationUserRoleType @default(MEMBER) // admin, owner, member
-  createdAt DateTime                 @default(now())
-
-  // Relations
-  organization Organization @relation(fields: [organizationId], references: [id])
-}
-
-model Team {
-  id             Int          @id @default(autoincrement())
-  name           String
-  organizationId Int
-  organization   Organization @relation(fields: [organizationId], references: [id])
-  members        UserTeam[]
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-}
-
-model UserTeam {
-  id     Int  @id @default(autoincrement())
-  userId Int
-  teamId Int
-  role   Role @default(USER)
-  user   User @relation(fields: [userId], references: [id])
-  team   Team @relation(fields: [teamId], references: [id])
-
-  @@unique([userId, teamId])
+  @@map("users")
 }
 
 model Contact {
-  id             Int           @id @default(autoincrement())
-  firstName      String
-  lastName       String
-  email          String?       @unique
-  phone          String?
-  jobTitle       String?
-  organizationId Int? // employer company
-  organization   Organization? @relation(fields: [organizationId], references: [id])
-  ownerId        Int? // user responsible
-  owner          User?         @relation(fields: [ownerId], references: [id])
-  tags           ContactTag[]
-  customFields   Json?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  notes          Note[]
-  activities     Activity[] // activities linked to contact
-  leads          Lead[] // leads associated with contact
-  opportunities  Opportunity[] // Add opposite relation field
+  id              String    @id @default(uuid())
+  salutation      String?
+  firstName       String    @map("first_name")
+  lastName        String    @map("last_name")
+  email           String    @unique
+  phone           String?
+  mobilePhone     String?   @map("mobile_phone")
+  jobTitle        String?   @map("job_title")
+  dateOfBirth     DateTime? @map("date_of_birth")
+  mailingAddress  String?   @map("mailing_address")
+  shippingAddress String?   @map("shipping_address")
+  leadSource      String?   @map("lead_source")
+  customerType    String?   @default("Prospect") @map("customer_type") // 'Prospect', 'Customer', 'VIP', 'Inactive'
+  loyaltyTier     String?   @default("Bronze") @map("loyalty_tier")
+  status          String?   @default("Active")
+  createdAt       DateTime  @default(now()) @map("created_date")
+  lastActivityAt  DateTime? @map("last_activity_at")
+
+  // Relations
+  householdId     String?
+  household       Household?       @relation(fields: [householdId], references: [id])
+  transactions    Transaction[]
+  opportunities   Opportunity[]
+  cases           Case[]
+  campaignMembers CampaignMember[]
+  activities      Activity[]
+  notes           Note[]
+  documents       Document[]
+  leads           Lead[]
+  emailMessages   EmailMessage[]
+
+  @@map("contacts")
 }
 
-model ContactTag {
-  id        Int     @id @default(autoincrement())
-  contactId Int
-  tag       String
-  contact   Contact @relation(fields: [contactId], references: [id])
+model Household {
+  id               String   @id @default(uuid())
+  name             String
+  primaryContactId String?  @map("primary_contact_id")
+  sharedAddress    String?  @map("shared_address")
+  createdAt        DateTime @default(now()) @map("created_date")
 
-  @@index([tag])
+  // Relations
+  members      Contact[]
+  transactions Transaction[]
+
+  @@map("households")
 }
 
+// Sales Pipeline Entities
 model Lead {
-  id             Int           @id @default(autoincrement())
-  source         String? // e.g., "web", "import", "campaign"
-  status         LeadStatus    @default(NEW)
-  contactId      Int? // who is the lead (nullable)
-  contact        Contact?      @relation(fields: [contactId], references: [id])
-  organizationId Int? // company lead pertains to
-  organization   Organization? @relation(fields: [organizationId], references: [id])
-  ownerId        Int? // assigned user
-  owner          User?         @relation(fields: [ownerId], references: [id])
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  notes          Note[]
-  activities     Activity[]
-  opportunity    Opportunity?  @relation // Define relation without `fields` and `references`
+  id            String    @id @default(uuid())
+  firstName     String    @map("first_name")
+  lastName      String    @map("last_name")
+  email         String
+  phone         String?
+  leadSource    String?   @map("lead_source") // 'Website', 'Social Media', 'Referral'
+  status        String?   @default("New") // 'New', 'Contacted', 'Qualified', 'Converted', 'Unqualified'
+  rating        String? // 'Hot', 'Warm', 'Cold'
+  interests     String? // JSON string of product interests
+  createdAt     DateTime  @default(now()) @map("created_date")
+  convertedDate DateTime? @map("converted_date")
+
+  // Relations
+  assignedToId       String?
+  assignedTo         User?            @relation(fields: [assignedToId], references: [id])
+  convertedContactId String?
+  convertedContact   Contact?         @relation(fields: [convertedContactId], references: [id])
+  campaignMembers    CampaignMember[]
+  activities         Activity[]
+  emailMessages      EmailMessage[]
+
+  @@map("leads")
 }
 
 model Opportunity {
-  id             Int              @id @default(autoincrement())
-  title          String
-  value          Float?
-  currency       String? // e.g., "USD"
-  stage          OpportunityStage @default(PROSPECTING)
-  probability    Int? // 0-100
-  closeDate      DateTime?
-  leadId         Int?             @unique // Add `@unique` for one-to-one relationship
-  lead           Lead?            @relation(fields: [leadId], references: [id])
-  contactId      Int? // primary contact
-  contact        Contact?         @relation(fields: [contactId], references: [id])
-  organizationId Int?
-  organization   Organization?    @relation(fields: [organizationId], references: [id])
-  ownerId        Int?
-  owner          User?            @relation(fields: [ownerId], references: [id])
-  pipelineId     Int? // optional pipeline reference
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-  activities     Activity[]
-  notes          Note[]
-  quotes         Quote[]
-}
-
-model Pipeline {
-  id     Int          @id @default(autoincrement())
-  name   String
-  stages String[] // e.g., ["Prospecting","Qualified","Proposal","Closed Won"]
-  orgId  Int
-  org    Organization @relation(fields: [orgId], references: [id])
-}
-
-model Activity {
-  id            Int          @id @default(autoincrement())
-  type          String // e.g., "call", "email", "task", "meeting"
-  title         String?
-  description   String?
-  dueDate       DateTime?
-  completed     Boolean      @default(false)
-  userId        Int? // creator
-  user          User?        @relation(fields: [userId], references: [id])
-  contactId     Int?
-  contact       Contact?     @relation(fields: [contactId], references: [id])
-  opportunityId Int?
-  opportunity   Opportunity? @relation(fields: [opportunityId], references: [id])
-  leadId        Int?
-  lead          Lead?        @relation(fields: [leadId], references: [id])
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-  attachments   Attachment[]
-}
-
-model Task {
-  id          Int       @id @default(autoincrement())
-  title       String
+  id          String    @id @default(uuid())
+  name        String
   description String?
-  dueDate     DateTime?
-  completed   Boolean   @default(false)
-  assigneeId  Int? // assigned to user
-  assignee    User?     @relation("taskAssignee", fields: [assigneeId], references: [id])
-  relatedType String? // e.g., "contact","opportunity" to simplify polymorphic links
-  relatedId   Int?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  amount      Float?
+  stage       String?   @default("Prospecting") // 'Prospecting', 'Qualification', 'Proposal', 'Closed Won', 'Closed Lost'
+  probability Float?    @default(0.1) // 0.00 to 1.00
+  closeDate   DateTime? @map("close_date")
+  type        String?   @default("New Business") // 'New Business', 'Upsell', 'Renewal'
+  leadSource  String?   @map("lead_source")
+  createdAt   DateTime  @default(now()) @map("created_date")
+  wonDate     DateTime? @map("won_date")
+
+  // Relations
+  contactId    String
+  contact      Contact              @relation(fields: [contactId], references: [id])
+  assignedToId String?
+  assignedTo   User?                @relation(fields: [assignedToId], references: [id])
+  products     OpportunityProduct[]
+  activities   Activity[]
+
+  @@map("opportunities")
 }
 
-model Note {
-  id            Int          @id @default(autoincrement())
-  content       String
-  authorId      Int?
-  author        User?        @relation("NoteAuthor", fields: [authorId], references: [id])
-  contactId     Int?
-  contact       Contact?     @relation(fields: [contactId], references: [id])
-  opportunityId Int?
-  opportunity   Opportunity? @relation(fields: [opportunityId], references: [id])
-  leadId        Int?
-  lead          Lead?        @relation(fields: [leadId], references: [id])
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-}
-
+// Product and Order Management
 model Product {
-  id             Int           @id @default(autoincrement())
-  sku            String?       @unique
-  name           String
-  description    String?
-  price          Float
-  currency       String?
-  organizationId Int?
-  organization   Organization? @relation(fields: [organizationId], references: [id])
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  quotes         QuoteItem[]
+  id          String   @id @default(uuid())
+  name        String
+  sku         String?  @unique
+  description String?
+  category    String?
+  price       Float?
+  cost        Float?
+  isActive    Boolean? @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_date")
+
+  // Relations
+  opportunityProducts OpportunityProduct[]
+  transactions        Transaction[]
+  transactionProducts TransactionProduct[]
+
+  @@map("products")
 }
 
-model Quote {
-  id            Int          @id @default(autoincrement())
-  opportunityId Int?
+model OpportunityProduct {
+  id         String @id @default(uuid())
+  quantity   Int?   @default(1)
+  unitPrice  Float? @map("unit_price")
+  discount   Float? @default(0)
+  totalPrice Float? @map("total_price")
+
+  // Relations
+  opportunityId String
+  opportunity   Opportunity @relation(fields: [opportunityId], references: [id])
+  productId     String
+  product       Product     @relation(fields: [productId], references: [id])
+
+  @@map("opportunity_products")
+}
+
+model Transaction {
+  id              String   @id @default(uuid())
+  orderId         String   @unique @map("order_id")
+  totalAmount     Float    @map("total_amount")
+  status          String?  @default("Completed") // 'Pending', 'Completed', 'Cancelled', 'Refunded'
+  paymentMethod   String?  @map("payment_method")
+  transactionDate DateTime @default(now()) @map("transaction_date")
+
+  // Relations
+  contactId   String
+  contact     Contact              @relation(fields: [contactId], references: [id])
+  householdId String?
+  household   Household?           @relation(fields: [householdId], references: [id])
+  products    TransactionProduct[]
+  product     Product?             @relation(fields: [productId], references: [id])
+  productId   String?
+
+  @@map("transactions")
+}
+
+model TransactionProduct {
+  id         String @id @default(uuid())
+  quantity   Int    @default(1)
+  unitPrice  Float  @map("unit_price")
+  discount   Float? @default(0)
+  totalPrice Float  @map("total_price")
+
+  // Relations
+  transactionId String
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
+  productId     String
+  product       Product     @relation(fields: [productId], references: [id])
+
+  @@map("transaction_products")
+}
+
+// Customer Service Entities
+model Case {
+  id           String    @id @default(uuid())
+  subject      String
+  description  String?
+  type         String?   @default("Question") // 'Question', 'Problem', 'Compliment', 'Suggestion'
+  priority     String?   @default("Medium") // 'Low', 'Medium', 'High', 'Critical'
+  status       String?   @default("New") // 'New', 'In Progress', 'Resolved', 'Closed'
+  createdAt    DateTime  @default(now()) @map("created_date")
+  resolvedDate DateTime? @map("resolved_date")
+
+  // Relations
+  contactId    String
+  contact      Contact    @relation(fields: [contactId], references: [id])
+  assignedToId String?
+  assignedTo   User?      @relation(fields: [assignedToId], references: [id])
+  activities   Activity[]
+
+  @@map("cases")
+}
+
+// Marketing Entities
+model Campaign {
+  id              String    @id @default(uuid())
+  name            String
+  type            String? // 'Email', 'SMS', 'Social Media', 'Direct Mail'
+  status          String?   @default("Planning") // 'Planning', 'Active', 'Completed', 'Cancelled'
+  startDate       DateTime? @map("start_date")
+  endDate         DateTime? @map("end_date")
+  budget          Float?
+  expectedRevenue Float?    @map("expected_revenue")
+  createdAt       DateTime  @default(now()) @map("created_date")
+
+  // Relations
+  campaignMembers CampaignMember[]
+
+  @@map("campaigns")
+}
+
+model CampaignMember {
+  id            String    @id @default(uuid())
+  status        String?   @default("Sent") // 'Sent', 'Opened', 'Clicked', 'Responded', 'Converted'
+  respondedDate DateTime? @map("responded_date")
+
+  // Relations
+  campaignId String
+  campaign   Campaign @relation(fields: [campaignId], references: [id])
+  leadId     String?
+  lead       Lead?    @relation(fields: [leadId], references: [id])
+  contactId  String?
+  contact    Contact? @relation(fields: [contactId], references: [id])
+
+  @@unique([campaignId, leadId])
+  @@unique([campaignId, contactId])
+  @@map("campaign_members")
+}
+
+// Activity Tracking Entities
+model Activity {
+  id            String    @id @default(uuid())
+  type          String // 'Call', 'Email', 'Meeting', 'Task', 'Note'
+  subject       String?
+  description   String?
+  dueDate       DateTime? @map("due_date")
+  completedDate DateTime? @map("completed_date")
+  status        String?   @default("Not Started") // 'Not Started', 'In Progress', 'Completed', 'Cancelled'
+  priority      String?   @default("Normal") // 'Low', 'Normal', 'High'
+  createdAt     DateTime  @default(now()) @map("created_date")
+
+  // Relations
+  contactId     String?
+  contact       Contact?     @relation(fields: [contactId], references: [id])
+  leadId        String?
+  lead          Lead?        @relation(fields: [leadId], references: [id])
+  assignedToId  String?
+  assignedTo    User?        @relation(fields: [assignedToId], references: [id])
   opportunity   Opportunity? @relation(fields: [opportunityId], references: [id])
-  issuerId      Int? // user who created quote
-  issuer        User?        @relation(fields: [issuerId], references: [id])
-  total         Float?
-  currency      String?
-  status        String? // draft, sent, accepted, declined
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-  items         QuoteItem[]
+  opportunityId String?
+  case          Case?        @relation(fields: [caseId], references: [id])
+  caseId        String?
+
+  @@map("activities")
 }
 
-model QuoteItem {
-  id        Int      @id @default(autoincrement())
-  quoteId   Int
-  productId Int?
-  quantity  Int      @default(1)
-  unitPrice Float
-  quote     Quote    @relation(fields: [quoteId], references: [id])
-  product   Product? @relation(fields: [productId], references: [id])
+model EmailMessage {
+  id          String    @id @default(uuid())
+  fromAddress String?   @map("from_address")
+  toAddress   String?   @map("to_address")
+  subject     String?
+  body        String?
+  direction   String? // 'Inbound', 'Outbound'
+  sentDate    DateTime? @map("sent_date")
+  status      String? // 'Sent', 'Delivered', 'Opened', 'Clicked'
+
+  // Relations
+  contactId String?
+  contact   Contact? @relation(fields: [contactId], references: [id])
+  leadId    String?
+  lead      Lead?    @relation(fields: [leadId], references: [id])
+
+  @@map("email_messages")
 }
 
-model Invoice {
-  id             Int           @id @default(autoincrement())
-  invoiceNumber  String        @unique
-  organizationId Int?
-  organization   Organization? @relation(fields: [organizationId], references: [id])
-  amount         Float
-  currency       String?
-  dueDate        DateTime?
-  status         String? // draft, sent, paid, overdue
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+// Supporting Tables
+model Note {
+  id        String   @id @default(uuid())
+  title     String?
+  content   String?
+  createdAt DateTime @default(now()) @map("created_date")
+
+  // Relations
+  contactId   String?
+  contact     Contact? @relation(fields: [contactId], references: [id])
+  createdById String?
+  createdBy   User?    @relation(fields: [createdById], references: [id])
+
+  @@map("notes")
 }
 
-model Attachment {
-  id         Int       @id @default(autoincrement())
-  url        String
-  filename   String
-  size       Int?
-  mimeType   String?
-  activityId Int?
-  activity   Activity? @relation(fields: [activityId], references: [id])
-  createdAt  DateTime  @default(now())
-}
+model Document {
+  id           String   @id @default(uuid())
+  fileName     String?  @map("file_name")
+  fileType     String?  @map("file_type")
+  fileSize     Int?     @map("file_size")
+  uploadedDate DateTime @default(now()) @map("uploaded_date")
 
-model AuditLog {
-  id        Int      @id @default(autoincrement())
-  entity    String // e.g., "Contact"
-  entityId  Int
-  action    String // create, update, delete
-  userId    Int?
-  user      User?    @relation(fields: [userId], references: [id])
-  changes   Json?
-  createdAt DateTime @default(now())
+  // Relations
+  contactId    String?
+  contact      Contact? @relation(fields: [contactId], references: [id])
+  uploadedById String?
+  uploadedBy   User?    @relation(fields: [uploadedById], references: [id])
+
+  @@map("documents")
 }
