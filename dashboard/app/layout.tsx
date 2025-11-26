@@ -3,8 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { ClerkProvider } from "@clerk/nextjs";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import QueryProvider from "@/components/providers/query-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,7 +25,6 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const queryClient = new QueryClient();
   return (
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning>
@@ -39,10 +37,7 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <QueryClientProvider client={queryClient}>
-              {children}
-              <ReactQueryDevtools initialIsOpen={false} />
-            </QueryClientProvider>
+            <QueryProvider>{children}</QueryProvider>
           </ThemeProvider>
         </body>
       </html>
