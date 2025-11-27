@@ -79,6 +79,7 @@ model Contact {
   status          String?   @default("Active")
   createdAt       DateTime  @default(now()) @map("created_date")
   lastActivityAt  DateTime? @map("last_activity_at")
+  customFields    Json?
 
   // Relations
   householdId     String?
