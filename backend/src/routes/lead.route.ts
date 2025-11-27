@@ -1,6 +1,6 @@
 import { Router } from "express";
 import {
-  convertLead,
+  convertLeadToContact,
   createLead,
   getLead,
   getLeads,
@@ -11,6 +11,6 @@ const router = Router();
 router.post("/", createLead);
 router.get("/", getLeads);
 router.get("/:id", getLead);
-router.put("/:id/convert", convertLead);
+router.post("/:id/convert", convertLeadToContact);
 
 export default router;
