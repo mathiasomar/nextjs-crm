@@ -1,13 +1,14 @@
 import {
   Calendar,
   ChevronUp,
+  Contact,
   Home,
   Inbox,
-  Plus,
+  Rocket,
   Search,
   Settings,
   Shirt,
-  ShoppingBasket,
+  Target,
   User,
   User2,
 } from "lucide-react";
@@ -16,7 +17,6 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
-  SidebarGroupAction,
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarHeader,
@@ -34,11 +34,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
-import { Sheet, SheetTrigger } from "./ui/sheet";
-import AddOrder from "./add-order";
-import AddUser from "./add-user";
-import AddCategory from "./add-category";
-import AddProduct from "./add-product";
+import { currentUser } from "@clerk/nextjs/server";
 
 const items = [
   {
@@ -68,7 +64,9 @@ const items = [
   },
 ];
 
-const AppSidebar = () => {
+const AppSidebar = async () => {
+  const user = await currentUser();
+  if (!user) return null;
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="py-4">
@@ -106,114 +104,54 @@ const AppSidebar = () => {
           </SidebarGroupContent>
         </SidebarGroup>
         <SidebarGroup>
-          <SidebarGroupLabel>Products</SidebarGroupLabel>
-          <SidebarGroupAction>
-            <Plus /> <span className="sr-only">Add Products</span>
-          </SidebarGroupAction>
+          <SidebarGroupLabel>Core</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <Link href="/dashboard/products">
-                    <Shirt />
-                    See All Products
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <Sheet>
-                    <SheetTrigger asChild>
-                      <SidebarMenuButton asChild>
-                        <Link href="#">
-                          <Plus />
-                          Add Product
-                        </Link>
-                      </SidebarMenuButton>
-                    </SheetTrigger>
-                    <AddProduct />
-                  </Sheet>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <Sheet>
-                    <SheetTrigger asChild>
-                      <SidebarMenuButton asChild>
-                        <Link href="#">
-                          <Plus />
-                          Add Category
-                        </Link>
-                      </SidebarMenuButton>
-                    </SheetTrigger>
-                    <AddCategory />
-                  </Sheet>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-        <SidebarGroup>
-          <SidebarGroupLabel>Users</SidebarGroupLabel>
-          <SidebarGroupAction>
-            <Plus /> <span className="sr-only">Add Users</span>
-          </SidebarGroupAction>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
+                <SidebarMenuButton tooltip={"Users"} asChild>
                   <Link href="/dashboard/users">
                     <User />
-                    See All Users
+                    Users
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <Sheet>
-                    <SheetTrigger asChild>
-                      <SidebarMenuButton asChild>
-                        <Link href="#">
-                          <Plus />
-                          Add User
-                        </Link>
-                      </SidebarMenuButton>
-                    </SheetTrigger>
-                    <AddUser />
-                  </Sheet>
+                <SidebarMenuButton tooltip={"Contacts"} asChild>
+                  <Link href="/dashboard/contacts">
+                    <Contact />
+                    Contacts
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip={"products"} asChild>
+                  <Link href="/dashboard/products">
+                    <Shirt />
+                    Products
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
         <SidebarGroup>
-          <SidebarGroupLabel>Orders / Payments</SidebarGroupLabel>
-          <SidebarGroupAction>
-            <Plus /> <span className="sr-only">Add Order</span>
-          </SidebarGroupAction>
+          <SidebarGroupLabel>Sales Pipeline</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <Link href="/dashboard/payments">
-                    <ShoppingBasket />
-                    See All Transactios
+                <SidebarMenuButton tooltip={"Leads"} asChild>
+                  <Link href="/dashboard/leads">
+                    <Target />
+                    Leads
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <Sheet>
-                    <SheetTrigger asChild>
-                      <SidebarMenuButton asChild>
-                        <Link href="#">
-                          <Plus />
-                          Add Order
-                        </Link>
-                      </SidebarMenuButton>
-                    </SheetTrigger>
-                    <AddOrder />
-                  </Sheet>
+                <SidebarMenuButton tooltip={"Leads"} asChild>
+                  <Link href="/dashboard/opportunities">
+                    <Rocket />
+                    Opportunities
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
@@ -227,7 +165,7 @@ const AppSidebar = () => {
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton>
                   <User2 />
-                  Omar Mathias
+                  {user ? `${user.firstName} ${user.lastName}` : "User"}
                   <ChevronUp className="ml-auto" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
