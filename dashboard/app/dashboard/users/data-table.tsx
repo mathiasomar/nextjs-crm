@@ -52,7 +52,7 @@ export function DataTable<TData, TValue>({
   return (
     <div className="overflow-hidden rounded-md border">
       {Object.keys(rowSelection).length > 0 && (
-        <div className="flex justify-end my-2">
+        <div className="flex justify-end my-2 mr-4">
           <Button className="text-sm" variant={"destructive"}>
             <Trash2 className="w-4 h-4" />
             Delete User(s)

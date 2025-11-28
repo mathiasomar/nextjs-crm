@@ -18,14 +18,19 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { DataTableColumnHeader } from "@/components/data-table-column-header";
 import Link from "next/link";
-import Image from "next/image";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export type User = {
   id: string;
-  avatar: string;
-  fullName: string;
-  email: string;
-  status: "active" | "inactive";
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  avatarUrl?: string;
+  role: "AMIN" | "MANAGER" | "AGENT" | "SUPPORT";
+  department?: string; // 'Sales', 'Support', 'Marketing'
+  isActive: boolean;
+  createdAt: Date;
 };
 
 export const columns: ColumnDef<User>[] = [
@@ -59,12 +64,12 @@ export const columns: ColumnDef<User>[] = [
 
       return (
         <div className="relative h-9 w-9">
-          <Image
-            src={user.avatar}
-            alt={user.fullName}
-            fill
-            className="rounded-full object-center"
-          />
+          <Avatar>
+            <AvatarImage src={user.avatarUrl} />
+            <AvatarFallback>
+              {user.firstName?.slice(0, 2).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
         </div>
       );
     },
@@ -74,6 +79,15 @@ export const columns: ColumnDef<User>[] = [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Full Name" />
     ),
+    cell: ({ row }) => {
+      const user = row.original;
+
+      return (
+        <p>
+          {user.firstName} {user.lastName}
+        </p>
+      );
+    },
   },
   {
     accessorKey: "email",
@@ -82,20 +96,27 @@ export const columns: ColumnDef<User>[] = [
     ),
   },
   {
+    accessorKey: "role",
+    header: "Role",
+  },
+  {
+    accessorKey: "department",
+    header: "Department",
+  },
+  {
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => {
-      const status = row.getValue("status");
+      const status = row.original;
 
       return (
         <div
           className={cn(
             `p-1 rounded-md w-max text-xs`,
-            status === "active" && "bg-green-500/40",
-            status === "inactive" && "bg-red-500/40"
+            status ? "bg-green-500/40" : "bg-red-500/40"
           )}
         >
-          {status as string}
+          {status ? "Active" : "Inactive"}
         </div>
       );
     },

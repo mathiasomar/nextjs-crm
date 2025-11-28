@@ -30,7 +30,7 @@ const SingleUserPage = () => {
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <BreadcrumbLink href="/users">Users</BreadcrumbLink>
+            <BreadcrumbLink href="/dashboard/users">Users</BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
