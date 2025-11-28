@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { prisma } from "../../lib/prisma";
+import { Prisma } from "../../generated/prisma/client";
 
 export const getLeads = async (req: Request, res: Response) => {
   const { status, rating } = req.query;
@@ -33,9 +34,11 @@ export const getLeads = async (req: Request, res: Response) => {
 };
 
 export const createLead = async (req: Request, res: Response) => {
-  const data = req.body;
+  const data: Prisma.LeadCreateInput = req.body;
 
-  const lead = await prisma.lead.create({ data });
+  const lead = await prisma.lead.create({
+    data,
+  });
   res.status(201).json({ message: "Lead created successfully", data: lead });
 };
 
@@ -71,7 +74,7 @@ export const convertLeadToContact = async (req: Request, res: Response) => {
     });
 
     // Update lead status and link to contact
-    const updatedLead = await tx.lead.update({
+    const updatedLead: Prisma.LeadUpdateInput = await tx.lead.update({
       where: {
         id,
       },

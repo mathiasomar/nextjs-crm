@@ -22,7 +22,7 @@ app.use(clerkMiddleware());
 app.use("/api/users", userRoutes);
 app.use("/api/contacts", contactRoute);
 app.use("/api/leads", leadRoute);
-app.use("/api/oppotunities", opportunityRoute);
+app.use("/api/opportunities", opportunityRoute);
 app.use("/api/activities", activityRoute);
 app.use("/api/organizations", organizationRoute);
 app.use("/api/products", productRoute);

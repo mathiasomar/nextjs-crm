@@ -36,7 +36,7 @@ export const getContacts = async (req: Request, res: Response) => {
 };
 
 export const createContact = async (req: Request, res: Response) => {
-  const data = req.body;
+  const data: Prisma.ContactCreateInput = req.body;
 
   const checkContact = await prisma.contact.findUnique({
     where: { email: data.email },
