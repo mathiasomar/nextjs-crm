@@ -61,12 +61,43 @@ export const createUser = async (req: Request, res: Response) => {
 };
 
 export const getUsers = async (req: Request, res: Response) => {
-  const users = await prisma.user.findMany();
-  res.status(200).json(users);
+  const { search, department, role } = req.query;
+  const where: any = {};
+
+  if (search) {
+    where.OR = [
+      { firstName: { contains: search, mode: "insensitive" } },
+      { lastName: { contains: search, mode: "insensitive" } },
+      { email: { contains: search, mode: "insensitive" } },
+    ];
+  }
+
+  if (department) where.department = department;
+  if (role) where.role = role;
+
+  const [total, item] = await Promise.all([
+    prisma.user.count({ where }),
+    prisma.user.findMany({
+      where,
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        role: true,
+        department: true,
+        isActive: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: "desc" },
+    }),
+  ]);
+
+  res.status(200).json({ total, data: item });
 };
 
 export const getUser = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const user = await prisma.user.findUnique({ where: { id: Number(id) } });
+  const user = await prisma.user.findUnique({ where: { id } });
   res.status(200).json(user);
 };

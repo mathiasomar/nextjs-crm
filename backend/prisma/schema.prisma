@@ -47,6 +47,7 @@ model User {
   avatarUrl   String?
   role        Role     @default(AGENT)
   department  String? // 'Sales', 'Support', 'Marketing'
+  isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
