@@ -4,19 +4,21 @@ import { Prisma } from "../../generated/prisma/client";
 
 export const getContacts = async (req: Request, res: Response) => {
   // Query params: search:q, tag, orgId(organization scope), ownerId, page, limit
-  const { q, customerType, status } = req.query;
+  const { search, customerType, status } = req.query;
 
   const where: any = {};
 
-  if (q) {
+  if (search) {
     where.OR = [
-      { firstName: { contains: q, mode: "insensitive" } },
-      { lastName: { contains: q, mode: "insensitive" } },
-      { email: { contains: q, mode: "insensitive" } },
+      { firstName: { contains: search, mode: "insensitive" } },
+      { lastName: { contains: search, mode: "insensitive" } },
+      { email: { contains: search, mode: "insensitive" } },
     ];
   }
 
-  if (customerType) where.customerType = customerType;
+  if (customerType && customerType !== "all") {
+    where.customerType = customerType;
+  }
   if (status) where.status = status;
 
   const [total, item] = await Promise.all([

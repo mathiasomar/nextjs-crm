@@ -12,8 +12,6 @@ import { columns } from "./columns";
 import { DataTable } from "./data-table";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetTrigger } from "@/components/ui/sheet";
-import AddUser from "@/components/add-user";
-import { useUsers } from "@/hooks/use-users";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import { AlertCircleIcon, SearchIcon } from "lucide-react";
 import DataTableSkeleton from "@/components/datatable-skeleton";
@@ -25,14 +23,24 @@ import {
 } from "@/components/ui/input-group";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
+import { useContacts } from "@/hooks/use-contacts";
+import ContactFilter from "@/components/contact-filter";
+import AddContact from "@/components/add-contact";
 
-const UsersPage = () => {
+const ContactsPage = () => {
   const [search, setSearch] = useState("");
   const [query, setQuery] = useState("");
-  const { data: users, isLoading, error } = useUsers(query);
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
+  const customerType = searchParams.get("customerType") || "all";
+  const status = searchParams.get("status") || "Active";
+
+  const {
+    data: contacts,
+    isLoading,
+    error,
+  } = useContacts(query, customerType, status);
 
   const handleSearch = (value: string) => {
     const params = new URLSearchParams(searchParams);
@@ -58,7 +66,7 @@ const UsersPage = () => {
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <BreadcrumbPage>Users</BreadcrumbPage>
+            <BreadcrumbPage>Contacts</BreadcrumbPage>
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
@@ -66,7 +74,7 @@ const UsersPage = () => {
         className="mb-8 px-4 py-2 bg-secondary roundedn-md flex items-center
       justify-between"
       >
-        <h1 className="font-semiboldnn">All Users</h1>
+        <h1 className="font-semiboldnn">All Contacts</h1>
         <div>
           <InputGroup>
             <InputGroupInput
@@ -91,11 +99,12 @@ const UsersPage = () => {
         </div>
         <Sheet>
           <SheetTrigger asChild>
-            <Button variant="default">Add User</Button>
+            <Button variant="default">Add Contact</Button>
           </SheetTrigger>
-          <AddUser />
+          <AddContact />
         </Sheet>
       </div>
+      <ContactFilter />
       {isLoading ? (
         <DataTableSkeleton columns={5} rows={3} compact={false} />
       ) : error ? (
@@ -106,10 +115,10 @@ const UsersPage = () => {
           </AlertTitle>
         </Alert>
       ) : (
-        <DataTable columns={columns} data={users.data} />
+        <DataTable columns={columns} data={contacts.data} />
       )}
     </div>
   );
 };
 
-export default UsersPage;
+export default ContactsPage;
