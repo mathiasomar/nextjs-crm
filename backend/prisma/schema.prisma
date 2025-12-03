@@ -38,20 +38,22 @@ enum OpportunityStage {
 }
 
 model User {
-  id          String   @id @default(uuid())
-  clerkUserId String   @unique // Clerk user id, canonical auth id
-  email       String?  @unique
+  id            String    @id @default(cuid())
+  email         String
+  emailVerified Boolean   @default(false)
   firstName   String?
   lastName    String?
   phone       String?
   avatarUrl   String?
+
   role        Role     @default(AGENT)
   department  String? // 'Sales', 'Support', 'Marketing'
   isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
 
-  // Reverse relations
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  sessions      Session[]
+  accounts      Account[]
   assignedLeads         Lead[]
   assignedOpportunities Opportunity[]
   assignedCases         Case[]
@@ -59,7 +61,56 @@ model User {
   createdNotes          Note[]
   uploadedDocuments     Document[]
 
+  @@unique([email])
   @@map("users")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
 }
 
 model Contact {
@@ -113,6 +164,7 @@ model Household {
 }
 
 // Sales Pipeline Entities
+
 model Lead {
   id            String    @id @default(uuid())
   firstName     String    @map("first_name")
@@ -163,6 +215,7 @@ model Opportunity {
 }
 
 // Product and Order Management
+
 model Product {
   id          String   @id @default(uuid())
   name        String
@@ -235,6 +288,7 @@ model TransactionProduct {
 }
 
 // Customer Service Entities
+
 model Case {
   id           String    @id @default(uuid())
   subject      String
@@ -256,6 +310,7 @@ model Case {
 }
 
 // Marketing Entities
+
 model Campaign {
   id              String    @id @default(uuid())
   name            String
@@ -292,6 +347,7 @@ model CampaignMember {
 }
 
 // Activity Tracking Entities
+
 model Activity {
   id            String    @id @default(uuid())
   type          String // 'Call', 'Email', 'Meeting', 'Task', 'Note'
@@ -338,6 +394,7 @@ model EmailMessage {
 }
 
 // Supporting Tables
+
 model Note {
   id        String   @id @default(uuid())
   title     String?
