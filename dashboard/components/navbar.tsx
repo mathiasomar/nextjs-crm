@@ -12,11 +12,15 @@ import Link from "next/link";
 import { ModeToggle } from "./mode-toggle";
 import { SidebarTrigger } from "./ui/sidebar";
 import {
-  RedirectToSignIn,
-  SignedIn,
-  SignedOut,
-  UserButton,
-} from "@clerk/nextjs";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { LogOut, Settings, User } from "lucide-react";
 
 const Navbar = () => {
   return (
@@ -29,13 +33,13 @@ const Navbar = () => {
         {/* THEME TOGGLE */}
         <ModeToggle />
         {/* USER MENU */}
-        <SignedIn>
+        {/* <SignedIn>
           <UserButton />
         </SignedIn>
         <SignedOut>
           <RedirectToSignIn />
-        </SignedOut>
-        {/* <DropdownMenu>
+        </SignedOut> */}
+        <DropdownMenu>
           <DropdownMenuTrigger>
             <Avatar>
               <AvatarImage src="https://github.com/shadcn.png" />
@@ -58,7 +62,7 @@ const Navbar = () => {
               Logout
             </DropdownMenuItem>
           </DropdownMenuContent>
-        </DropdownMenu> */}
+        </DropdownMenu>
       </div>
     </nav>
   );

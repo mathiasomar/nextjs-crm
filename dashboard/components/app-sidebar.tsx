@@ -34,7 +34,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
-import { currentUser } from "@clerk/nextjs/server";
 
 const items = [
   {
@@ -65,8 +64,6 @@ const items = [
 ];
 
 const AppSidebar = async () => {
-  const user = await currentUser();
-  if (!user) return null;
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="py-4">
@@ -165,7 +162,7 @@ const AppSidebar = async () => {
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton>
                   <User2 />
-                  {user ? `${user.firstName} ${user.lastName}` : "User"}
+                  Omar Mathias
                   <ChevronUp className="ml-auto" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
