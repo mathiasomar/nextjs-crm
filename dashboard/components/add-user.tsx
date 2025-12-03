@@ -31,6 +31,7 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import api from "@/app/utils/api";
 import { useQueryClient } from "@tanstack/react-query";
+import { authClient } from "@/lib/auth-client";
 
 const formSchema = z.object({
   firstName: z
@@ -72,32 +73,54 @@ const AddUser = ({ onClose }: { onClose: () => void }) => {
   });
 
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
-    try {
-      setLoading(true);
-      const response = await api.post("/users", {
-        name: `${data.firstName} ${data.lastName}`,
+    await authClient.signUp.email(
+      {
         email: data.email,
         password: data.password,
-        // phone: data.phone || null,
-        // role: data.role || "AGENT",
-        // department: data.department || null,
-      });
-
-      if (response.status === 201) {
-        toast.success("User created successfully");
-        form.reset();
-        // Invalidate users query to refresh the data
-        queryClient.invalidateQueries({ queryKey: ["users"] });
-        // Close the sheet
-        onClose();
+        name: `${data.firstName} ${data.lastName}`,
+      },
+      {
+        onRequest: (ctx) => {
+          setLoading(true);
+        },
+        onSuccess: (ctx) => {
+          setLoading(false);
+          toast.success("User created successfully");
+          form.reset();
+          queryClient.invalidateQueries({ queryKey: ["users"] });
+        },
+        onError: (ctx) => {
+          setLoading(false);
+          toast.error(ctx.error.message || "Failed to create user");
+        },
       }
-    } catch (error) {
-      console.error("Error creating user:", error);
-      const err = error as { response?: { data?: { error?: string } } };
-      toast.error(err?.response?.data?.error || "Failed to create user");
-    } finally {
-      setLoading(false);
-    }
+    );
+    // try {
+    //   setLoading(true);
+    //   const response = await api.post("/users", {
+    //     name: `${data.firstName} ${data.lastName}`,
+    //     email: data.email,
+    //     password: data.password,
+    //     // phone: data.phone || null,
+    //     // role: data.role || "AGENT",
+    //     // department: data.department || null,
+    //   });
+
+    //   if (response.status === 201) {
+    //     toast.success("User created successfully");
+    //     form.reset();
+    //     // Invalidate users query to refresh the data
+    //     queryClient.invalidateQueries({ queryKey: ["users"] });
+    //     // Close the sheet
+    //     onClose();
+    //   }
+    // } catch (error) {
+    //   console.error("Error creating user:", error);
+    //   const err = error as { response?: { data?: { error?: string } } };
+    //   toast.error(err?.response?.data?.error || "Failed to create user");
+    // } finally {
+    //   setLoading(false);
+    // }
   };
   return (
     <SheetContent>

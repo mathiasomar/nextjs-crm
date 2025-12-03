@@ -7,12 +7,8 @@ import opportunityRoute from "./routes/oppotunity.route";
 import activityRoute from "./routes/activity.route";
 import organizationRoute from "./routes/organization.route";
 import productRoute from "./routes/product.route";
-// import { auth } from "./lib/auth";
-// import { toNodeHandler } from "better-auth/node";
 
 const app = express();
-
-// app.all("/api/auth/{*any}", toNodeHandler(auth));
 
 app.use(express.json());
 // app.use(express.urlencoded({ extended: true }));
