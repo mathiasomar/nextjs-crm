@@ -41,8 +41,7 @@ model User {
   id            String    @id @default(cuid())
   email         String
   emailVerified Boolean   @default(false)
-  firstName   String?
-  lastName    String?
+  name   String?
   phone       String?
   avatarUrl   String?
 

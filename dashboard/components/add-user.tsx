@@ -20,13 +20,17 @@ import {
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { ScrollArea } from "./ui/scroll-area";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "./ui/select";
+// import {
+//   Select,
+//   SelectContent,
+//   SelectItem,
+//   SelectTrigger,
+//   SelectValue,
+// } from "./ui/select";
+import { useState } from "react";
+import toast from "react-hot-toast";
+import api from "@/app/utils/api";
+import { useQueryClient } from "@tanstack/react-query";
 
 const formSchema = z.object({
   firstName: z
@@ -40,22 +44,60 @@ const formSchema = z.object({
   email: z
     .string()
     .regex(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, { message: "Invalid email address" }),
-  phone: z
+  password: z
     .string()
-    .max(15, { message: "Phone must not exceed 15 digit" })
-    .optional(),
-  role: z.string().optional(),
-  department: z.string().optional(),
+    .min(8, { message: "Password must be at least 8 characters!" }),
+  //   phone: z
+  //     .string()
+  //     .max(15, { message: "Phone must not exceed 15 digit" })
+  //     .optional(),
+  //   role: z.string().optional(),
+  //   department: z.string().optional(),
 });
 
-const AddUser = () => {
+const AddUser = ({ onClose }: { onClose: () => void }) => {
+  const [loading, setLoading] = useState(false);
+  const queryClient = useQueryClient();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      email: "",
+      password: "",
+      // phone: "",
+      // role: "",
+      // department: "",
+    },
   });
 
-  const onSubmit = (data: z.infer<typeof formSchema>) => {
-    // Do something with the form values.
-    console.log(data);
+  const onSubmit = async (data: z.infer<typeof formSchema>) => {
+    try {
+      setLoading(true);
+      const response = await api.post("/users", {
+        name: `${data.firstName} ${data.lastName}`,
+        email: data.email,
+        password: data.password,
+        // phone: data.phone || null,
+        // role: data.role || "AGENT",
+        // department: data.department || null,
+      });
+
+      if (response.status === 201) {
+        toast.success("User created successfully");
+        form.reset();
+        // Invalidate users query to refresh the data
+        queryClient.invalidateQueries({ queryKey: ["users"] });
+        // Close the sheet
+        onClose();
+      }
+    } catch (error) {
+      console.error("Error creating user:", error);
+      const err = error as { response?: { data?: { error?: string } } };
+      toast.error(err?.response?.data?.error || "Failed to create user");
+    } finally {
+      setLoading(false);
+    }
   };
   return (
     <SheetContent>
@@ -126,6 +168,26 @@ const AddUser = () => {
                   )}
                 />
                 <Controller
+                  name="password"
+                  control={form.control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor="password">Password</FieldLabel>
+                      <Input
+                        {...field}
+                        id="password"
+                        type="password"
+                        aria-invalid={fieldState.invalid}
+                        placeholder="Enter Password"
+                        autoComplete="off"
+                      />
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
+                    </Field>
+                  )}
+                />
+                {/* <Controller
                   name="phone"
                   control={form.control}
                   render={({ field, fieldState }) => (
@@ -175,8 +237,11 @@ const AddUser = () => {
                   control={form.control}
                   render={({ field, fieldState }) => (
                     <Field data-invalid={fieldState.invalid}>
-                      <FieldLabel htmlFor="User Role">Customer Type</FieldLabel>
-                      <Select>
+                      <FieldLabel htmlFor="role">User Role</FieldLabel>
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Select User Role" />
                         </SelectTrigger>
@@ -192,11 +257,11 @@ const AddUser = () => {
                       )}
                     </Field>
                   )}
-                />
+                /> */}
               </FieldGroup>
 
-              <Button type="submit" className="mt-6 w-full">
-                Submit
+              <Button disabled={loading} type="submit" className="mt-6 w-full">
+                {loading ? "Submitting..." : "Submit"}
               </Button>
             </form>
           </SheetDescription>

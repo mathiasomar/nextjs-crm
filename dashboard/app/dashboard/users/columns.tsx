@@ -19,19 +19,7 @@ import {
 import { DataTableColumnHeader } from "@/components/data-table-column-header";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
-export type User = {
-  id: string;
-  email?: string;
-  firstName?: string;
-  lastName?: string;
-  phone?: string;
-  avatarUrl?: string;
-  role: "AMIN" | "MANAGER" | "AGENT" | "SUPPORT";
-  department?: string; // 'Sales', 'Support', 'Marketing'
-  isActive: boolean;
-  createdAt: Date;
-};
+import { User } from "@/app/types";
 
 export const columns: ColumnDef<User>[] = [
   {
@@ -67,7 +55,7 @@ export const columns: ColumnDef<User>[] = [
           <Avatar>
             <AvatarImage src={user.avatarUrl} />
             <AvatarFallback>
-              {user.firstName?.slice(0, 2).toUpperCase()}
+              {user.name?.slice(0, 2).toUpperCase()}
             </AvatarFallback>
           </Avatar>
         </div>
@@ -75,19 +63,10 @@ export const columns: ColumnDef<User>[] = [
     },
   },
   {
-    accessorKey: "fullName",
+    accessorKey: "name",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Full Name" />
     ),
-    cell: ({ row }) => {
-      const user = row.original;
-
-      return (
-        <p>
-          {user.firstName} {user.lastName}
-        </p>
-      );
-    },
   },
   {
     accessorKey: "email",

@@ -3,7 +3,41 @@ import { verifyWebhook } from "@clerk/express/webhooks";
 import { prisma } from "../../lib/prisma";
 import { Prisma } from "../../generated/prisma/client";
 
-export const createUser = async (req: Request, res: Response) => {};
+export const createUser = async (req: Request, res: Response) => {
+  try {
+    const { name, email, phone, role, department } = req.body;
+
+    // Validate required fields
+    if (!name || !email) {
+      return res.status(400).json({ error: "Name and email are required" });
+    }
+
+    // Check if user already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (existingUser) {
+      return res.status(409).json({ error: "User already exists" });
+    }
+
+    // Create new user
+    const user = await prisma.user.create({
+      data: {
+        name,
+        email,
+        phone: phone || null,
+        role: role || "AGENT",
+        department: department || null,
+      },
+    });
+
+    res.status(201).json(user);
+  } catch (error) {
+    console.error("Error creating user:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
 
 export const getUsers = async (req: Request, res: Response) => {
   try {
@@ -12,8 +46,7 @@ export const getUsers = async (req: Request, res: Response) => {
 
     if (search) {
       where.OR = [
-        { firstName: { contains: search as string, mode: "insensitive" } },
-        { lastName: { contains: search as string, mode: "insensitive" } },
+        { name: { contains: search as string, mode: "insensitive" } },
         { email: { contains: search as string, mode: "insensitive" } },
       ];
     }
@@ -27,8 +60,7 @@ export const getUsers = async (req: Request, res: Response) => {
         where,
         select: {
           id: true,
-          firstName: true,
-          lastName: true,
+          name: true,
           email: true,
           role: true,
           department: true,

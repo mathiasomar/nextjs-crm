@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "@/app/utils/api";
-import { User } from "@/app/dashboard/users/columns";
 
 export const useUsers = (search: string) => {
   return useQuery({
@@ -11,6 +10,7 @@ export const useUsers = (search: string) => {
       });
       return data;
     },
+    staleTime: 1000,
   });
 };
 
@@ -25,20 +25,7 @@ export const useUser = (id: string) => {
 };
 
 // create user mutation
-export const useCreateUser = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (userData: User) => {
-      const { data } = await api.post("/users", userData);
-      return data;
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries(["users"]);
-      queryClient.invalidateQueries(["user", data.id]);
-    },
-  });
-};
+export const useCreateUser = async () => {};
 
 // update user mutation
 export const useUpdateUser = () => {

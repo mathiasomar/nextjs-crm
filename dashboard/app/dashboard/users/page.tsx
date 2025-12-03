@@ -29,6 +29,7 @@ import { useState } from "react";
 const UsersPage = () => {
   const [search, setSearch] = useState("");
   const [query, setQuery] = useState("");
+  const [sheetOpen, setSheetOpen] = useState(false);
   const { data: users, isLoading, error } = useUsers(query);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -89,11 +90,11 @@ const UsersPage = () => {
             </InputGroupAddon>
           </InputGroup>
         </div>
-        <Sheet>
+        <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
           <SheetTrigger asChild>
             <Button variant="default">Add User</Button>
           </SheetTrigger>
-          <AddUser />
+          <AddUser onClose={() => setSheetOpen(false)} />
         </Sheet>
       </div>
       {isLoading ? (
