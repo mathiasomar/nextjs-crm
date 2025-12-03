@@ -4,6 +4,7 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { auth } from "@clerk/nextjs/server";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { Toaster } from "react-hot-toast";
 
 const Layout = async ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = await auth();
@@ -20,6 +21,7 @@ const Layout = async ({ children }: { children: React.ReactNode }) => {
       <main className="w-full">
         <Navbar />
         <div className="px-4">{children}</div>
+        <Toaster />
       </main>
     </SidebarProvider>
   );
