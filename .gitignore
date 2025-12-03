@@ -1,7 +1,0 @@
-backend/.env
-backend/node_modules/
-backend/dist/
-
-dashboard/.env
-dashboard/node_modules/
-dashboard/dist/
