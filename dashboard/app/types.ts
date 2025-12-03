@@ -1,11 +1,13 @@
 export type User = {
-  id: string;
+  id?: string;
   email?: string;
-  name?: string;
+  firstName: string;
+  lastName: string;
   phone?: string;
+  password: string;
   avatarUrl?: string;
-  role: "AMIN" | "MANAGER" | "AGENT" | "SUPPORT";
+  role: "ADMIN" | "MANAGER" | "AGENT" | "SUPPORT";
   department?: string; // 'Sales', 'Support', 'Marketing'
-  isActive: boolean;
-  createdAt: Date;
+  isActive?: boolean;
+  createdAt?: Date;
 };

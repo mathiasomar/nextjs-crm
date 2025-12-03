@@ -20,18 +20,15 @@ import {
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { ScrollArea } from "./ui/scroll-area";
-// import {
-//   Select,
-//   SelectContent,
-//   SelectItem,
-//   SelectTrigger,
-//   SelectValue,
-// } from "./ui/select";
-import { useState } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
 import toast from "react-hot-toast";
-import api from "@/app/utils/api";
-import { useQueryClient } from "@tanstack/react-query";
-import { authClient } from "@/lib/auth-client";
+import { useCreateUser } from "@/hooks/use-users";
 
 const formSchema = z.object({
   firstName: z
@@ -48,17 +45,16 @@ const formSchema = z.object({
   password: z
     .string()
     .min(8, { message: "Password must be at least 8 characters!" }),
-  //   phone: z
-  //     .string()
-  //     .max(15, { message: "Phone must not exceed 15 digit" })
-  //     .optional(),
-  //   role: z.string().optional(),
-  //   department: z.string().optional(),
+  phone: z
+    .string()
+    .max(15, { message: "Phone must not exceed 15 digit" })
+    .optional(),
+  role: z.enum(["ADMIN", "MANAGER", "AGENT", "SUPPORT"]).optional(),
+  department: z.string().optional(),
 });
 
 const AddUser = ({ onClose }: { onClose: () => void }) => {
-  const [loading, setLoading] = useState(false);
-  const queryClient = useQueryClient();
+  const userCreateMutation = useCreateUser();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -66,32 +62,28 @@ const AddUser = ({ onClose }: { onClose: () => void }) => {
       lastName: "",
       email: "",
       password: "",
-      // phone: "",
-      // role: "",
-      // department: "",
+      phone: "",
+      role: "AGENT",
+      department: "",
     },
   });
 
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
-    await authClient.signUp.email(
+    userCreateMutation.mutate(
       {
+        firstName: data.firstName,
+        lastName: data.lastName,
         email: data.email,
         password: data.password,
-        name: `${data.firstName} ${data.lastName}`,
+        phone: data.phone,
+        role: data.role ? data.role : "AGENT",
+        department: data.department,
       },
       {
-        onRequest: (ctx) => {
-          setLoading(true);
-        },
-        onSuccess: (ctx) => {
-          setLoading(false);
+        onSuccess: () => {
           toast.success("User created successfully");
           form.reset();
-          queryClient.invalidateQueries({ queryKey: ["users"] });
-        },
-        onError: (ctx) => {
-          setLoading(false);
-          toast.error(ctx.error.message || "Failed to create user");
+          onClose();
         },
       }
     );
@@ -105,7 +97,6 @@ const AddUser = ({ onClose }: { onClose: () => void }) => {
     //     // role: data.role || "AGENT",
     //     // department: data.department || null,
     //   });
-
     //   if (response.status === 201) {
     //     toast.success("User created successfully");
     //     form.reset();
@@ -210,7 +201,7 @@ const AddUser = ({ onClose }: { onClose: () => void }) => {
                     </Field>
                   )}
                 />
-                {/* <Controller
+                <Controller
                   name="phone"
                   control={form.control}
                   render={({ field, fieldState }) => (
@@ -280,11 +271,15 @@ const AddUser = ({ onClose }: { onClose: () => void }) => {
                       )}
                     </Field>
                   )}
-                /> */}
+                />
               </FieldGroup>
 
-              <Button disabled={loading} type="submit" className="mt-6 w-full">
-                {loading ? "Submitting..." : "Submit"}
+              <Button
+                disabled={userCreateMutation.isPending}
+                type="submit"
+                className="mt-6 w-full"
+              >
+                {userCreateMutation.isPending ? "Submitting..." : "Submit"}
               </Button>
             </form>
           </SheetDescription>

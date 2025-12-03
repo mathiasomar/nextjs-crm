@@ -5,7 +5,8 @@ import { Prisma } from "../../generated/prisma/client";
 import { auth } from "../lib/auth";
 
 export const createUser = async (req: Request, res: Response) => {
-  const { firstName, lastName, email, password, role, department } = req.body;
+  const { firstName, lastName, email, password, role, department, phone } =
+    req.body;
   const name = `${firstName} ${lastName}`.trim();
 
   const result = await auth.api.signUpEmail({
@@ -25,6 +26,7 @@ export const createUser = async (req: Request, res: Response) => {
     data: {
       role,
       department,
+      phone,
     },
   });
   res.status(201).json(result.user);
