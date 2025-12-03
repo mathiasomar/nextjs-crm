@@ -7,7 +7,6 @@ import opportunityRoute from "./routes/oppotunity.route";
 import activityRoute from "./routes/activity.route";
 import organizationRoute from "./routes/organization.route";
 import productRoute from "./routes/product.route";
-import { clerkMiddleware } from "@clerk/express";
 import { auth } from "./lib/auth";
 import { toNodeHandler } from "better-auth/node";
 
@@ -22,7 +21,6 @@ app.use(
     origin: [process.env.ORIGIN || "http://localhost:3000"],
   })
 );
-app.use(clerkMiddleware());
 
 app.use("/api/users", userRoutes);
 app.use("/api/contacts", contactRoute);

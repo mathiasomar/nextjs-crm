@@ -3,101 +3,61 @@ import { verifyWebhook } from "@clerk/express/webhooks";
 import { prisma } from "../../lib/prisma";
 import { Prisma } from "../../generated/prisma/client";
 
-export const createUser = async (req: Request, res: Response) => {
+export const createUser = async (req: Request, res: Response) => {};
+
+export const getUsers = async (req: Request, res: Response) => {
   try {
-    const evt = await verifyWebhook(req);
+    const { search, department, role } = req.query;
+    const where: any = {};
 
-    // Only handle user-related events
-    if (evt.type !== "user.created" && evt.type !== "user.updated") {
-      return res.status(400).json({ error: "Unsupported webhook event" });
+    if (search) {
+      where.OR = [
+        { firstName: { contains: search as string, mode: "insensitive" } },
+        { lastName: { contains: search as string, mode: "insensitive" } },
+        { email: { contains: search as string, mode: "insensitive" } },
+      ];
     }
 
-    // Narrow the data to any so we can safely pick properties that exist on user payloads
-    const data: any = evt.data;
+    if (department) where.department = department;
+    if (role) where.role = role;
 
-    const clerkUserId = data.id;
-    const email = data.email ?? data.email_addresses?.[0]?.email_address;
-    const firstName = data.first_name ?? data.firstName ?? undefined;
-    const lastName = data.last_name ?? data.lastName ?? undefined;
-
-    if (!email) {
-      return res.status(400).json({ error: "Email is required" });
-    }
-
-    // Check if the user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-    });
-
-    let user: Prisma.UserCreateInput;
-
-    if (existingUser) {
-      // Update the existing user
-      user = await prisma.user.update({
-        where: { email },
-        data: {
-          clerkUserId,
-          firstName,
-          lastName,
+    const [total, item] = await Promise.all([
+      prisma.user.count({ where }),
+      prisma.user.findMany({
+        where,
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          role: true,
+          department: true,
+          isActive: true,
+          createdAt: true,
         },
-      });
-    } else {
-      // Create a new user
-      user = await prisma.user.create({
-        data: {
-          clerkUserId,
-          email,
-          firstName,
-          lastName,
-        },
-      });
-    }
+        orderBy: { createdAt: "desc" },
+      }),
+    ]);
 
-    res.status(200).json(user);
+    res.status(200).json({ total, data: item });
   } catch (error) {
-    console.error("Error creating/updating user:", error);
+    console.error("Error fetching users:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
 
-export const getUsers = async (req: Request, res: Response) => {
-  const { search, department, role } = req.query;
-  const where: any = {};
-
-  if (search) {
-    where.OR = [
-      { firstName: { contains: search, mode: "insensitive" } },
-      { lastName: { contains: search, mode: "insensitive" } },
-      { email: { contains: search, mode: "insensitive" } },
-    ];
-  }
-
-  if (department) where.department = department;
-  if (role) where.role = role;
-
-  const [total, item] = await Promise.all([
-    prisma.user.count({ where }),
-    prisma.user.findMany({
-      where,
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        email: true,
-        role: true,
-        department: true,
-        isActive: true,
-        createdAt: true,
-      },
-      orderBy: { createdAt: "desc" },
-    }),
-  ]);
-
-  res.status(200).json({ total, data: item });
-};
-
 export const getUser = async (req: Request, res: Response) => {
-  const { id } = req.params;
-  const user = await prisma.user.findUnique({ where: { id } });
-  res.status(200).json(user);
+  try {
+    const { id } = req.params;
+    const user = await prisma.user.findUnique({ where: { id } });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.status(200).json(user);
+  } catch (error) {
+    console.error("Error fetching user:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 };
