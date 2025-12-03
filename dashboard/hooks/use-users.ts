@@ -70,3 +70,17 @@ export const useDeleteUser = () => {
     },
   });
 };
+
+export const useDeleteManyUser = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<unknown, unknown, { ids: string[] }>({
+    mutationFn: async ({ ids }) => {
+      const { data } = await api.post(`/users/delete-users`, { ids });
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(["users"]);
+    },
+  });
+};

@@ -23,18 +23,21 @@ import { DataTablePagination } from "@/components/data-table-pagination";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
+import { useDeleteManyUser } from "@/hooks/use-users";
+import toast from "react-hot-toast";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
 }
 
-export function DataTable<TData, TValue>({
+export function DataTable<TData extends { id: string }, TValue>({
   columns,
   data,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [rowSelection, setRowSelection] = useState({});
+  const deleteUsersMutation = useDeleteManyUser();
   const table = useReactTable({
     data,
     columns,
@@ -49,11 +52,38 @@ export function DataTable<TData, TValue>({
     },
   });
 
+  // console.log(rowSelection);
+
+  const handleDeleteSelected = () => {
+    const selectedIds: string[] = table
+      .getSelectedRowModel()
+      .rows.map((row) => row.original.id);
+
+    // console.log("Deleting users with IDs:", selectedIds);
+
+    if (selectedIds.length === 0) return;
+
+    deleteUsersMutation.mutate(
+      { ids: selectedIds },
+      {
+        onSuccess: () => {
+          table.resetRowSelection();
+          toast.success("Selected users deleted successfully");
+        },
+      }
+    );
+  };
+
   return (
     <div className="overflow-hidden rounded-md border">
       {Object.keys(rowSelection).length > 0 && (
         <div className="flex justify-end my-2 mr-4">
-          <Button className="text-sm" variant={"destructive"}>
+          <Button
+            className="text-sm"
+            variant={"destructive"}
+            onClick={handleDeleteSelected}
+            disabled={deleteUsersMutation.isPending}
+          >
             <Trash2 className="w-4 h-4" />
             Delete User(s)
           </Button>

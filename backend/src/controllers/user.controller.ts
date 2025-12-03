@@ -104,3 +104,19 @@ export const getUser = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
+export const deleteManyUser = async (req: Request, res: Response) => {
+  const { ids } = req.body;
+
+  if (!Array.isArray(ids)) {
+    return res.status(400).json({ error: "ids must be array" });
+  }
+
+  const deleted = await prisma.user.deleteMany({
+    where: { id: { in: ids } },
+  });
+
+  res
+    .status(200)
+    .json({ deletedCount: deleted.count, message: "User(s) deleted" });
+};

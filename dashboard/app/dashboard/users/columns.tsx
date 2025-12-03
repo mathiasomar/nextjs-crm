@@ -55,7 +55,7 @@ export const columns: ColumnDef<User>[] = [
           <Avatar>
             <AvatarImage src={user.avatarUrl} />
             <AvatarFallback>
-              {user.name?.slice(0, 2).toUpperCase()}
+              {user.firstName?.slice(0, 2).toUpperCase()}
             </AvatarFallback>
           </Avatar>
         </div>
@@ -116,7 +116,7 @@ export const columns: ColumnDef<User>[] = [
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(user.id)}
+              onClick={() => navigator.clipboard.writeText(user.id as string)}
             >
               Copy user ID
             </DropdownMenuItem>
