@@ -55,7 +55,7 @@ export const columns: ColumnDef<User>[] = [
           <Avatar>
             <AvatarImage src={user.avatarUrl} />
             <AvatarFallback>
-              {user.firstName?.slice(0, 2).toUpperCase()}
+              {user.name?.slice(0, 2).toUpperCase()}
             </AvatarFallback>
           </Avatar>
         </div>

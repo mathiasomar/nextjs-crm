@@ -212,6 +212,24 @@ const AddContact = () => {
                     </Field>
                   )}
                 />
+                <Controller
+                  name="jobTitle"
+                  control={form.control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor="jobTitle">Job Title</FieldLabel>
+                      <Input
+                        {...field}
+                        id="jobTitle"
+                        aria-invalid={fieldState.invalid}
+                        autoComplete="off"
+                      />
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
+                    </Field>
+                  )}
+                />
                 <div className="flex flex-col gap-3">
                   <Label htmlFor="date" className="px-1">
                     Date of birth
