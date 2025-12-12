@@ -3,52 +3,6 @@ import { verifyWebhook } from "@clerk/express/webhooks";
 import { prisma } from "../lib/prisma";
 import { auth } from "../lib/auth";
 
-export const createUser = async (req: Request, res: Response) => {
-  const { firstName, lastName, email, password, role, department, phone } =
-    req.body;
-  const name = `${firstName} ${lastName}`.trim();
-
-  const result = await auth.api.signUpEmail({
-    body: {
-      email,
-      password,
-      name,
-    },
-  });
-
-  if (!result.user) {
-    return res.status(400).json({ error: "Failed to create user" });
-  }
-
-  await prisma.user.update({
-    where: { id: result.user.id },
-    data: {
-      role,
-      department,
-      phone,
-    },
-  });
-  res.status(201).json(result.user);
-};
-
-export const signIn = async (req: Request, res: Response) => {
-  const { email, password } = req.body;
-
-  const result = await auth.api.signInEmail({
-    body: {
-      email,
-      password,
-    },
-  });
-
-  if (!result.user) {
-    return res.status(400).json({ error: "Invalid credentials" });
-  }
-  res
-    .status(200)
-    .json({ message: "User verified successfuly", data: result.user });
-};
-
 export const getUsers = async (req: Request, res: Response) => {
   try {
     const { search, department, role } = req.query;
@@ -74,7 +28,7 @@ export const getUsers = async (req: Request, res: Response) => {
           email: true,
           role: true,
           department: true,
-          isActive: true,
+          isVerified: true,
           createdAt: true,
         },
         orderBy: { createdAt: "desc" },

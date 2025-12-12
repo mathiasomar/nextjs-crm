@@ -71,8 +71,7 @@ const AddUser = ({ onClose }: { onClose: () => void }) => {
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
     userCreateMutation.mutate(
       {
-        firstName: data.firstName,
-        lastName: data.lastName,
+        name: `${data.firstName} ${data.lastName}`,
         email: data.email,
         password: data.password,
         phone: data.phone,

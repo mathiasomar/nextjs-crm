@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 // import { LogOut, Settings, User } from "lucide-react";
 // import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
@@ -21,8 +23,10 @@ import {
 } from "./ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { LogOut, Settings, User } from "lucide-react";
+import { useAuth } from "@/context/auth-context";
 
 const Navbar = () => {
+  const { logout } = useAuth();
   return (
     <nav className="p-4 flex items-center justify-between sticky bg-background top-0 z-10">
       {/* LEFT */}
@@ -57,7 +61,7 @@ const Navbar = () => {
               <Settings className="h-[1.2rem] w-[1.2rem] mr-2" />
               Settings
             </DropdownMenuItem>
-            <DropdownMenuItem variant="destructive">
+            <DropdownMenuItem variant="destructive" onClick={logout}>
               <LogOut className="h-[1.2rem] w-[1.2rem] mr-2" />
               Logout
             </DropdownMenuItem>

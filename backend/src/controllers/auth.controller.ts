@@ -24,7 +24,8 @@ export const register = async (req: Request, res: Response) => {
       });
     }
 
-    const { email, password, name }: RegisterData = validationResult.data;
+    const { email, password, name, role, phone, department }: RegisterData =
+      validationResult.data;
 
     // Check if user exists
     const existingUser = await prisma.user.findUnique({
@@ -46,6 +47,9 @@ export const register = async (req: Request, res: Response) => {
         email,
         password: hashedPassword,
         name,
+        phone,
+        role,
+        department,
       },
       select: {
         id: true,
@@ -57,29 +61,23 @@ export const register = async (req: Request, res: Response) => {
     });
 
     // Generate tokens
-    const { accessToken, refreshToken } = generateTokens(user);
+    // const { accessToken, refreshToken } = generateTokens(user);
 
     // Create session
     await createSession(user.id, req.headers["user-agent"], req.ip);
 
     // Save refresh token
-    await prisma.refreshToken.create({
-      data: {
-        userId: user.id,
-        token: refreshToken,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-      },
-    });
+    // await prisma.refreshToken.create({
+    //   data: {
+    //     userId: user.id,
+    //     token: refreshToken,
+    //     expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+    //   },
+    // });
 
     res.status(201).json({
       success: true,
-      data: {
-        user,
-        tokens: {
-          accessToken,
-          refreshToken,
-        },
-      },
+      data: user,
     });
   } catch (error) {
     console.error("Registration error:", error);

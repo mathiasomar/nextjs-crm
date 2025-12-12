@@ -1,3 +1,5 @@
+"use client";
+
 import {
   Calendar,
   ChevronUp,
@@ -34,6 +36,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
+import { useAuth } from "@/context/auth-context";
 
 const items = [
   {
@@ -63,7 +66,10 @@ const items = [
   },
 ];
 
-const AppSidebar = async () => {
+const AppSidebar = () => {
+  const { user, logout } = useAuth();
+
+  if (!user) return null;
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="py-4">
@@ -162,14 +168,14 @@ const AppSidebar = async () => {
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton>
                   <User2 />
-                  Omar Mathias
+                  {user ? user.name : "Not logged in"}
                   <ChevronUp className="ml-auto" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem>Account</DropdownMenuItem>
                 <DropdownMenuItem>Setting</DropdownMenuItem>
-                <DropdownMenuItem>Sign out</DropdownMenuItem>
+                <DropdownMenuItem onClick={logout}>Sign out</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </SidebarMenuItem>

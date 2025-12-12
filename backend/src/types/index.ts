@@ -26,4 +26,7 @@ export interface LoginCredentials {
 
 export interface RegisterData extends LoginCredentials {
   name: string;
+  role?: "AGENT" | "MANAGER" | "ADMIN" | "SUPPORT";
+  phone?: string;
+  department?: string;
 }

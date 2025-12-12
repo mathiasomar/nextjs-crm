@@ -30,7 +30,7 @@ export const useCreateUser = () => {
 
   return useMutation({
     mutationFn: async (userData: User) => {
-      const { data } = await api.post("/users/signup", userData);
+      const { data } = await api.post("/auth/register", userData);
       return data;
     },
     onSuccess: (data) => {
