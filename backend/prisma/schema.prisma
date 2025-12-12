@@ -38,78 +38,63 @@ enum OpportunityStage {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  email         String
-  emailVerified Boolean   @default(false)
-  name   String?
-  phone       String?
-  avatarUrl   String?
+  id        String  @id @default(cuid())
+  email     String  @unique
+  password  String
+  name      String?
+  phone     String?
+  avatarUrl String?
 
-  role        Role     @default(AGENT)
-  department  String? // 'Sales', 'Support', 'Marketing'
-  isActive    Boolean  @default(true)
+  role       Role    @default(AGENT)
+  department String? // 'Sales', 'Support', 'Marketing'
+  isVerified Boolean @default(false)
 
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  sessions      Session[]
-  accounts      Account[]
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
   assignedLeads         Lead[]
   assignedOpportunities Opportunity[]
   assignedCases         Case[]
   assignedActivities    Activity[]
   createdNotes          Note[]
   uploadedDocuments     Document[]
+  // Relations
+  sessions              Session[]
+  refreshTokens         RefreshToken[]
 
-  @@unique([email])
+  @@index([email])
   @@map("users")
 }
 
 model Session {
-  id        String   @id
-  expiresAt DateTime
-  token     String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  ipAddress String?
-  userAgent String?
+  id        String   @id @default(cuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userAgent String?
+  ipAddress String?
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 
-  @@unique([token])
-  @@index([userId])
-  @@map("session")
-}
-
-model Account {
-  id                    String    @id
-  accountId             String
-  providerId            String
-  userId                String
-  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  accessToken           String?
-  refreshToken          String?
-  idToken               String?
-  accessTokenExpiresAt  DateTime?
-  refreshTokenExpiresAt DateTime?
-  scope                 String?
-  password              String?
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
-  @@map("account")
+  @@index([expiresAt])
 }
 
-model Verification {
-  id         String   @id
-  identifier String
-  value      String
+model RefreshToken {
+  id         String    @id @default(cuid())
+  userId     String
+  token      String    @unique
   expiresAt  DateTime
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  revokedAt  DateTime?
+  replacedBy String?
+  createdAt  DateTime  @default(now())
 
-  @@index([identifier])
-  @@map("verification")
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
 }
 
 model Contact {

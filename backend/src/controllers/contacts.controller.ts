@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { prisma } from "../../lib/prisma";
+import { prisma } from "../lib/prisma";
 import { Prisma } from "../../generated/prisma/client";
 
 export const getContacts = async (req: Request, res: Response) => {
@@ -65,8 +65,7 @@ export const getContact = async (req: Request, res: Response) => {
         include: {
           assignedTo: {
             select: {
-              firstName: true,
-              lastName: true,
+              name: true,
               email: true,
             },
           },
@@ -140,8 +139,7 @@ export const getContactActivities = async (req: Request, res: Response) => {
     include: {
       assignedTo: {
         select: {
-          firstName: true,
-          lastName: true,
+          name: true,
           email: true,
         },
       },
@@ -164,8 +162,7 @@ export const createContactActivity = async (req: Request, res: Response) => {
       include: {
         assignedTo: {
           select: {
-            firstName: true,
-            lastName: true,
+            name: true,
             email: true,
           },
         },

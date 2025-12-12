@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
-import { prisma } from "../../lib/prisma";
+import { prisma } from "../lib/prisma";
+import { Prisma } from "../../generated/prisma/client";
 
 export const getProducts = async (req: Request, res: Response) => {
   const { search, category, inActive } = req.query;
@@ -42,7 +43,7 @@ export const createProduct = async (req: Request, res: Response) => {
   if (checkProduct)
     return res.status(400).json({ message: "Product already exists" });
 
-  const product = await prisma.product.create({
+  const product: Prisma.ProductCreateInput = await prisma.product.create({
     data: {
       ...data,
       price: data.price ? parseFloat(data.price) : 0,

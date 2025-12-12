@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
 import { verifyWebhook } from "@clerk/express/webhooks";
-import { prisma } from "../../lib/prisma";
-import { Prisma } from "../../generated/prisma/client";
+import { prisma } from "../lib/prisma";
 import { auth } from "../lib/auth";
 
 export const createUser = async (req: Request, res: Response) => {

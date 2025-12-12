@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { prisma } from "../../lib/prisma";
+import { prisma } from "../lib/prisma";
 import { Prisma } from "../../generated/prisma/client";
 
 export const getLeads = async (req: Request, res: Response) => {
@@ -17,8 +17,7 @@ export const getLeads = async (req: Request, res: Response) => {
       include: {
         assignedTo: {
           select: {
-            firstName: true,
-            lastName: true,
+            name: true,
             email: true,
           },
         },
@@ -116,8 +115,7 @@ export const getLead = async (req: Request, res: Response) => {
     include: {
       assignedTo: {
         select: {
-          firstName: true,
-          lastName: true,
+          name: true,
           email: true,
         },
       },
